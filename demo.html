@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLAN_PACT — демонстрационный стенд</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101112;color:#eee;font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{height:72px;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #303234}h1{font-size:18px;margin:0}header small{display:block;color:#999;margin-top:5px}nav{display:flex;gap:6px}button,a{font:inherit;color:inherit;background:#232527;border:1px solid #383b3e;border-radius:8px;padding:9px 12px;text-decoration:none;cursor:pointer}button[aria-pressed=true]{background:#006bb4;border-color:#006bb4}main{height:calc(100dvh - 72px);display:flex;gap:24px;padding:24px;align-items:center;justify-content:center;overflow:auto}.stage{min-width:0;display:flex;flex-direction:column;gap:10px}.desktop{flex:1}.mobile{flex:none}.caption{display:flex;align-items:center;justify-content:space-between;color:#aaa;font-size:12px}.screen{position:relative;overflow:hidden;background:#181818;border:1px solid #45484b;box-shadow:0 16px 50px #0005}.desktop .screen{border-radius:12px}.mobile .screen{border:6px solid #343638;border-radius:30px}iframe{display:block;border:0;transform-origin:top left;background:#181818}.mobile .caption{padding-inline:6px}body[data-mode=desktop] .mobile,body[data-mode=mobile] .desktop{display:none}body[data-mode=mobile] .mobile{margin:auto}button:focus-visible,a:focus-visible{outline:2px solid #60baff;outline-offset:3px}@media(max-width:700px){header{height:auto;min-height:100px;flex-wrap:wrap;padding:12px}main{height:calc(100dvh - 110px);padding:14px;gap:16px;align-items:flex-start}nav{flex-wrap:wrap}button,a{padding:7px 9px;font-size:12px}}
+</style>
+</head>
+<body data-mode="both">
+<header><div><h1>FLAN_PACT</h1><small>Десктоп и мобильная версия · интерактивный показ</small></div><nav aria-label="Режим демонстрации"><button data-mode="both" aria-pressed="true">Рядом</button><button data-mode="desktop" aria-pressed="false">Десктоп</button><button data-mode="mobile" aria-pressed="false">Мобильная</button><button id="fullscreen">Полный экран</button><a href="index.html" target="_blank" rel="noopener">Открыть приложение ↗</a></nav></header>
+<main>
+<section class="stage desktop"><div class="caption"><span>Десктоп</span><span>1440 × 900</span></div><div class="screen"><iframe title="Десктопная версия FLAN_PACT" src="index.html?demo=desktop" width="1440" height="900"></iframe></div></section>
+<section class="stage mobile"><div class="caption"><span>Мобильная</span><span>390 × 844</span></div><div class="screen"><iframe title="Мобильная версия FLAN_PACT" src="index.html?demo=mobile" width="390" height="844"></iframe></div></section>
+</main>
+<script>
+const main=document.querySelector('main');
+function fit(){const mode=document.body.dataset.mode,pad=innerWidth<700?28:48,gap=24,availableWidth=main.clientWidth-pad,availableHeight=main.clientHeight-pad-28;let mobileScale=Math.min(1,availableHeight/856,availableWidth/402);if(mode==='both')mobileScale=Math.min(mobileScale,Math.max(.25,availableWidth*.27/402));const mobileWidth=402*mobileScale;const desktopWidth=mode==='both'?Math.max(160,availableWidth-mobileWidth-gap):availableWidth;for(const [name,w,h,scale,border]of [['desktop',1440,900,Math.min(desktopWidth/1440,availableHeight/900),2],['mobile',390,844,mobileScale,12]]){const section=document.querySelector('.'+name),screen=section.querySelector('.screen'),frame=section.querySelector('iframe');screen.style.width=(w*scale+border)+'px';screen.style.height=(h*scale+border)+'px';frame.style.transform=`scale(${scale})`;section.style.flex='0 0 auto';}}
+document.querySelectorAll('button[data-mode]').forEach(button=>button.onclick=()=>{document.body.dataset.mode=button.dataset.mode;document.querySelectorAll('button[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));fit();});
+document.querySelector('#fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{document.querySelector('#fullscreen').textContent='Используйте полный экран браузера';}};
+addEventListener('resize',fit);fit();
+</script>
+</body></html>
