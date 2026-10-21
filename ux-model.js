@@ -27,6 +27,7 @@
     return s;
   }
   function validate(s){
+    s.timer=null; // Manual timers are retired; elapsed time follows calendar plans.
     if(!s||s.version!==4||!Array.isArray(s.tasks)||!Array.isArray(s.lists)||!Array.isArray(s.notes)||!Array.isArray(s.folders))throw Error('Неверный формат резервной копии');
     for(const key of ['tasks','lists','notes','folders']){const ids=new Set();for(const r of s[key]){if(!r||typeof r.id!=='string'||ids.has(r.id))throw Error('Повреждённые или повторяющиеся записи');ids.add(r.id);}}
     const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&!Number.isNaN(new Date(d+'T12:00:00').getTime());
@@ -71,18 +72,29 @@
     if(!date)throw Error('Выберите дату');
     if(start&&(!end||mins(end)<=mins(start)||mins(end)>1440))throw Error('Окончание должно быть позже начала в пределах суток');
     const old=t.plans.find(p=>p.id===planId)||t.plans[0];
+    if(s.timer?.taskId===t.id&&(!old||old.date!==date||old.start!==start||old.end!==end))s.timer=null;
     if(old){t.history||=[];t.history.push({at:new Date().toISOString(),action:'Перепланирование',before:clone(old),after:{date,start,end}});}
     if(!start){t.plans=planId?t.plans.filter(p=>p.id!==planId):[];}
     else {const p={id:old?.id||uid(),date,start,end,timeZone:old?.timeZone||s.settings.timeZone,actionVersion:(old?.actionVersion||0)+1,baseline:old?.baseline||(old?{date:old.date,start:old.start,end:old.end}:null)};if(old)t.plans[t.plans.indexOf(old)]=p;else t.plans.push(p);}
-    t.plannedDate=date;t.dueDate=date;t.dueTime=start||'';t.duration=start?mins(end)-mins(start):t.duration||30;
+    if(start)t.autoRoll=false;t.plannedDate=date;t.dueDate=date;t.dueTime=start||'';t.duration=start?mins(end)-mins(start):t.duration||30;
   }
   function nextRepeat(date,rule){
     let d=shift(date,1);if(rule==='weekly')d=shift(date,7);if(rule==='weekdays')while([0,6].includes(new Date(d+'T12:00:00').getDay()))d=shift(d,1);
     if(rule==='monthly'){const v=new Date(date+'T12:00:00'),wanted=v.getDate();v.setDate(1);v.setMonth(v.getMonth()+1);const last=new Date(v.getFullYear(),v.getMonth()+1,0).getDate();v.setDate(Math.min(wanted,last));d=day(v);}
     return d;
   }
+  function expandRepeats(s,t,until){
+    until=t.repeatUntil;const plan=t.plans[0];if(!until||!plan||!t.repeat||t.repeat==='none'||t.deletedAt||t.archivedAt)return;
+    t.seriesId ||=t.id;let previous=t,date=plan.date;
+    while(true){date=nextRepeat(date,t.repeat);if(date>until)break;
+      let next=s.tasks.find(x=>x.seriesId===t.seriesId&&x.plannedDate===date);
+      if(!next){next={...clone(t),id:uid(),plannedDate:date,dueDate:date,status:'pending',done:false,completedAt:null,sessions:[],history:[],nextOccurrenceId:null,createdAt:new Date().toISOString()};next.plans=[{...clone(plan),id:uid(),date,baseline:null,outcome:null,actionVersion:0}];s.tasks.push(next);}
+      previous.nextOccurrenceId=next.id;previous=next;
+    }
+    t.repeatThrough=until;
+  }
   function complete(s,t,status='done'){return FlanEvents.completeTask(s,t,status);}
   function receive(data){const next=validate(clone(data));next.settings={...next.settings,...state.settings};next.timer=state.timer;write(next);undo.length=0;}
 
-  window.FlanModel={KEY,OLD,get state(){return state;},get loadError(){return loadError;},get canUndo(){return !!undo.length;},get undoLabel(){return undo.at(-1)?.label;},change,undoLast,restore,receive,validate,migrate,clone,uid,day,shift,mins,clock,color,bucket,listBucket,actual,elapsed,schedule,complete,nextRepeat};
+  window.FlanModel={KEY,OLD,get state(){return state;},get loadError(){return loadError;},get canUndo(){return !!undo.length;},get undoLabel(){return undo.at(-1)?.label;},change,undoLast,restore,receive,validate,migrate,clone,uid,day,shift,mins,clock,color,bucket,listBucket,actual,elapsed,schedule,complete,nextRepeat,expandRepeats};
 })();

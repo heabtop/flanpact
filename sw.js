@@ -1,4 +1,4 @@
-const CACHE='flan-pact-v04-mobile-notes-toolbar';
+const CACHE='flan-pact-v05-glass-transparent-motion-oct21';
 const ASSETS=['./','./index.html','./styles.css','./ux.css','./ux-model.js','./event-actions.js','./app.js','./backup.js','./manifest.webmanifest','./icons/icon.svg?v=15','./icons/favicon-32.png?v=15','./icons/apple-touch-icon.png?v=15','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('flan-pact-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
