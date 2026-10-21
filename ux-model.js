@@ -1,4 +1,4 @@
-/* FLAN_PACT 0.4: data, migration and reversible operations. */
+/* Flan Fact 0.4: data, migration and reversible operations. */
 (() => {
   'use strict';
   const KEY='flan-pact.local.v04', OLD='flan-pact.local.v03';
