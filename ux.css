@@ -755,3 +755,17 @@ input[data-date-field]{cursor:pointer;padding-right:38px;background-image:url("d
  input.field[type=time]::-webkit-date-and-time-value{text-align:left;min-width:0;margin:0}
  input.field[type=time]::-webkit-datetime-edit{padding:0;min-width:0}
 }
+
+/* Round-dot display; original text remains available to accessibility tools. */
+.current-task-ticker{background:#080a0a!important;color:#cfe2d8!important}
+.current-task-ticker .ticker-window{position:relative;flex:1;min-width:0;height:32px;mask-image:none;-webkit-mask-image:none}
+.current-task-ticker .ticker-track,.current-task-ticker [data-ticker-time]{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);animation:none!important;white-space:nowrap}
+.current-task-ticker .dot-title{display:block;width:100%;height:32px}
+.current-task-ticker .dot-time{display:block;flex:0 0 auto;height:32px;box-sizing:content-box;border:0;padding:0}
+.current-task-ticker .dot-time[hidden]{display:none}
+@media(max-width:760px){.current-task-ticker{gap:8px;padding-inline:10px}.current-task-ticker .dot-time{padding:0}}
+
+/* Subtle compositor-only glow variation, without repainting individual dots. */
+.current-task-ticker .dot-title{animation:dot-display-glow 4s ease-in-out infinite}
+@keyframes dot-display-glow{0%,100%{opacity:.91}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.current-task-ticker .dot-title{animation:none}}

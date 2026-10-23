@@ -31,7 +31,7 @@ function openModal(title,body,footer='',kind='generic'){
  syncViewport();initTimeIntervals();document.body.classList.add('dialog-open');const focus=kind==='task'?$('.ux-dialog'):$('input:not([type=hidden]):not([type=date]):not([type=time]),textarea', $('#modal-root'))||$('.ux-dialog');focus?.focus({preventScroll:true});return true;
 }
 function closeModal(force=false){if(dateFieldParent)return closeFieldDate();if(activeModal==='categories')return closeCategories();if(activeModal==='note'&&!force&&!persistNote())return false;clearTimeout(saveTimer);activeModal=null;document.body.classList.remove('dialog-open');noteDraft=null;$('#modal-root').innerHTML='';lastFocus?.focus?.({preventScroll:true});return true;}
-function header(){return `<div class="utility-bar"><div class="current-task-ticker" data-current-ticker><div class="ticker-window"><div class="ticker-track"><span data-ticker-title></span><span data-ticker-copy aria-hidden="true"></span></div></div><span class="ticker-time" data-ticker-time></span></div><div class="utility-right">${btn('undo','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/></svg>','','utility-icon',`aria-label="Отменить последнее действие" title="Отменить" ${M.canUndo?'':'disabled'}`)}${btn('search','<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7"/><path d="m16 16 5 5"/></svg>','','utility-icon','aria-label="Поиск по всем записям" title="Поиск"')}</div></div>`;}
+function header(){return `<div class="utility-bar"><div class="current-task-ticker" data-current-ticker><div class="ticker-window"><div class="ticker-track"><span data-ticker-title></span><span data-ticker-copy aria-hidden="true"></span></div></div><span class="ticker-time" data-ticker-time></span></div><div class="utility-right">${btn('undo','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/></svg>','','utility-icon',`aria-label="Отменить последнее действие" title="Отменить" ${M.canUndo?'':'disabled'}`)}${btn('reload','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v6h-6"/><path d="M20 10a8 8 0 1 0-.6 5"/></svg>','','utility-icon','aria-label="Обновить страницу" title="Обновить страницу"')}${btn('search','<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7"/><path d="m16 16 5 5"/></svg>','','utility-icon','aria-label="Поиск по всем записям" title="Поиск"')}</div></div>`;}
 // The strip follows real time, independently of the day being browsed.
 function tickerClock(seconds){seconds=Math.max(0,Math.floor(seconds));return `${Math.floor(seconds/3600)}:${String(Math.floor(seconds/60)%60).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 function currentTickerTask(now){
@@ -215,6 +215,7 @@ async function action(a,id,target){
  if(!target.closest('#context-menu')){menuAnchor=target;const r=target.getBoundingClientRect();menuAnchorRect={left:r.left,right:r.right,top:r.top,bottom:r.bottom};}closeContext();
  switch(a){
  case 'close':closeModal();break;
+ case 'reload':if(persistInline())location.reload();break;
  case 'undo':try{const label=M.undoLast();if(label){closeModal(true);render();toast('Отменено: '+label);queueSync();}}catch(e){toast(e.message,true);}break;
  case 'search':searchDialog();break;
  case 'settings':settingsDialog();break;
