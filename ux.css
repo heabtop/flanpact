@@ -320,7 +320,10 @@ select.field option {background:var(--field);color:var(--ink);}
 .quick-task,.calendar-reminders .quick-task{margin-bottom:var(--panel-gap);}
 .reminder-lists{gap:var(--panel-gap);}
 .reminder-list .empty-state{min-height:64px;padding:18px 0;display:flex;align-items:center;justify-content:center;}
-@media(min-width:761px){.reminder-lists:not(.aside-lists){grid-auto-rows:1px;row-gap:0;}.reminder-lists:not(.aside-lists)>.reminder-list{margin-bottom:20px;}}
+@media(min-width:761px){
+ .reminder-lists{grid-auto-rows:max-content;align-content:start;row-gap:20px;}
+ .reminder-lists>.reminder-list{height:auto;min-height:min-content;max-height:none;margin-bottom:0;grid-row:auto;}
+}
 .notes-columns{gap:12px;border:0;background:transparent;overflow:visible;}
 .notes-folders-column,.notes-index,.notes-content{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;}
 .notes-index{overflow:auto;}
@@ -769,3 +772,93 @@ input[data-date-field]{cursor:pointer;padding-right:38px;background-image:url("d
 .current-task-ticker .dot-title{animation:dot-display-glow 4s ease-in-out infinite}
 @keyframes dot-display-glow{0%,100%{opacity:.91}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.current-task-ticker .dot-title{animation:none}}
+
+/* Desktop shell. Mobile keeps its existing floating bottom navigation. */
+.desktop-report-scroll{display:contents;}
+@media(min-width:761px){
+ .app-frame{
+  --desktop-rail:50.4px;
+  --desktop-rim:4px;
+  position:fixed;inset:0;height:100dvh;min-height:0;overflow:hidden;
+  padding:var(--desktop-rim) var(--desktop-rim) var(--desktop-rim) var(--desktop-rail);
+  border:0;
+  border-radius:0;
+  background:var(--surface-raised);
+ }
+ .app-frame>.main-content{
+  width:100%;max-width:none;min-width:0;
+  height:100%;min-height:0;overflow:hidden;overscroll-behavior:contain;
+  display:flex;flex-direction:column;
+  margin:0;padding-bottom:12px;
+  border:1px solid var(--line);border-radius:18px;
+  background:var(--paper);
+ }
+ .app-frame>.glass-nav{
+  position:fixed;left:0;top:0;bottom:auto;
+  width:var(--desktop-rail);height:auto;
+  padding:var(--desktop-menu-top,72px) 7px 8px;
+  display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:48px;gap:8px;
+  transform:none;border:0;border-radius:0;
+  background:transparent;box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  transition:none;
+ }
+ .app-frame>.glass-nav::after{
+  content:'ff';position:absolute;top:var(--desktop-logo-top,14px);left:0;right:0;height:44px;
+  display:grid;place-items:center;pointer-events:none;
+  font-size:20px;font-weight:600;letter-spacing:-2px;color:var(--ink);
+ }
+ .app-frame>.glass-nav::before{
+  left:7px;right:auto;top:calc(var(--desktop-menu-top,72px) + 7.2px);bottom:auto;
+  width:36.4px;height:33.6px;border-radius:12.6px;
+  /* Individual translate is applied outside scale: the glass stretch must
+     not multiply the travel distance to the lower navigation entries. */
+  transform:none;
+  translate:0 calc(var(--nav-index,0) * 56px);
+  transition:translate .38s cubic-bezier(.22,.8,.25,1);
+ }
+ .app-frame>.glass-nav .nav-item{width:100%;height:48px;padding:0;border-radius:12.6px;transform:none;transition:color .18s ease;}
+ .app-frame>.glass-nav .nav-item:active:not(:disabled){transform:none;}
+ /* Only the desktop icons shrink by 15%; rail and selector stay unchanged. */
+ .app-frame>.glass-nav .nav-item svg{width:20.4px;height:20.4px;}
+ .app-frame>.glass-nav .nav-item:hover{background:transparent;}
+ .calendar-page .calendar-scroll{min-height:100px;}
+ /* Headers stay in normal flow above independent scrolling content. */
+ .app-frame>.main-content>*{flex:0 0 auto;min-width:0;}
+ .app-frame>.main-content>.calendar-workspace{flex:1 1 auto;min-height:0;}
+ #main[data-page=tasks]>.reminder-lists,
+ #main.notes-page>.notes-columns,
+ #main[data-page=settings]>.settings-page,
+ #main[data-page=analytics]>.desktop-report-scroll{
+  flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
+ }
+ #main[data-page=tasks]>.reminder-lists{align-content:start;}
+ #main[data-page=analytics]>.desktop-report-scroll{display:block;}
+ /* All notes/diary columns fill the same available row. Old viewport-based
+    min/max heights belonged to the former bottom-navigation layout. */
+ #main.notes-page>.notes-columns{
+  grid-template-rows:minmax(0,1fr);align-items:stretch;overflow:hidden;
+ }
+ #main.notes-page>.notes-columns>.notes-folders-column,
+ #main.notes-page>.notes-columns>.notes-index,
+ #main.notes-page>.notes-columns>.notes-content{
+  height:100%;min-height:0;max-height:none;overflow:auto;
+  overscroll-behavior:contain;
+ }
+ #main.notes-page .notes-index{display:flex;flex-direction:column;overflow:hidden;}
+ #main.notes-page .notes-index>.notes-toolbar,
+ #main.notes-page .notes-index>.selection-bar{flex:0 0 auto;}
+ #main.notes-page .notes-index>.notes-list{
+  flex:1 1 auto;min-height:0;overflow:auto;align-content:start;
+  overscroll-behavior:contain;
+ }
+ .calendar-reminders{flex-direction:column;overflow:hidden;}
+ .calendar-reminders>.reminders-toolbar,
+ .calendar-reminders>.quick-task,
+ .calendar-reminders>.selection-bar{flex:0 0 auto;}
+ .calendar-reminders>.reminder-lists{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:start;}
+}
+@media(min-width:1200px){.calendar-reminders{display:flex;}}
+@media(min-width:761px) and (prefers-reduced-motion:reduce){
+ .app-frame>.glass-nav::before{transition:none;animation:none!important;}
+}

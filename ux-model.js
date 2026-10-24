@@ -27,11 +27,12 @@
     return s;
   }
   function validate(s){
-    s.timer=null; // Manual timers are retired; elapsed time follows calendar plans.
     if(!s||s.version!==4||!Array.isArray(s.tasks)||!Array.isArray(s.lists)||!Array.isArray(s.notes)||!Array.isArray(s.folders))throw Error('Неверный формат резервной копии');
+    s.timer=null;
     for(const key of ['tasks','lists','notes','folders']){const ids=new Set();for(const r of s[key]){if(!r||typeof r.id!=='string'||ids.has(r.id))throw Error('Повреждённые или повторяющиеся записи');ids.add(r.id);}}
-    const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&!Number.isNaN(new Date(d+'T12:00:00').getTime());
-    for(const t of s.tasks){if(typeof t.title!=='string'||!Array.isArray(t.plans)||!Array.isArray(t.sessions))throw Error('Повреждённая задача');for(const p of [...t.plans,...t.sessions]){if(!validDate(p.date)||!/^\d{2}:\d{2}$/.test(p.start)||!/^\d{2}:\d{2}$/.test(p.end)||mins(p.start)<0||mins(p.end)>1440||mins(p.start)>=mins(p.end))throw Error('Некорректный интервал времени');}}
+    const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&!Number.isNaN(new Date(d+'T12:00:00Z').getTime())&&new Date(d+'T12:00:00Z').toISOString().slice(0,10)===d;
+    const validTime=(v,end=false)=>typeof v==='string'&&(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(v)||(end&&v==='24:00'));
+    for(const t of s.tasks){if(!s.lists.some(l=>l.id===t.listId))throw Error('Задача ссылается на отсутствующий список');for(const key of ['plannedDate','dueDate','deadline','repeatUntil'])if(t[key]&&!validDate(t[key]))throw Error('Некорректная дата задачи');if(typeof t.title!=='string'||!Array.isArray(t.plans)||!Array.isArray(t.sessions))throw Error('Повреждённая задача');for(const p of [...t.plans,...t.sessions]){if(!validDate(p.date)||!validTime(p.start)||!validTime(p.end,true)||mins(p.start)<0||mins(p.end)>1440||mins(p.start)>=mins(p.end))throw Error('Некорректный интервал времени');}}
     for(const n of s.notes){if(typeof n.body!=='string'||!['note','diary'].includes(n.type))throw Error('Повреждённая запись');}
     s.settings={...base().settings,...s.settings};if(!Number.isInteger(s.settings.startHour)||!Number.isInteger(s.settings.endHour)||s.settings.startHour<0||s.settings.endHour>24||s.settings.startHour>=s.settings.endHour)throw Error('Некорректный диапазон календаря');
     for(const t of s.tasks)for(const p of t.plans)p.timeZone||=s.settings.timeZone;
@@ -78,15 +79,15 @@
     else {const p={id:old?.id||uid(),date,start,end,timeZone:old?.timeZone||s.settings.timeZone,actionVersion:(old?.actionVersion||0)+1,baseline:old?.baseline||(old?{date:old.date,start:old.start,end:old.end}:null)};if(old)t.plans[t.plans.indexOf(old)]=p;else t.plans.push(p);}
     if(start)t.autoRoll=false;t.plannedDate=date;t.dueDate=date;t.dueTime=start||'';t.duration=start?mins(end)-mins(start):t.duration||30;
   }
-  function nextRepeat(date,rule){
+  function nextRepeat(date,rule,anchorDay){
     let d=shift(date,1);if(rule==='weekly')d=shift(date,7);if(rule==='weekdays')while([0,6].includes(new Date(d+'T12:00:00').getDay()))d=shift(d,1);
-    if(rule==='monthly'){const v=new Date(date+'T12:00:00'),wanted=v.getDate();v.setDate(1);v.setMonth(v.getMonth()+1);const last=new Date(v.getFullYear(),v.getMonth()+1,0).getDate();v.setDate(Math.min(wanted,last));d=day(v);}
+    if(rule==='monthly'){const v=new Date(date+'T12:00:00'),wanted=anchorDay||v.getDate();v.setDate(1);v.setMonth(v.getMonth()+1);const last=new Date(v.getFullYear(),v.getMonth()+1,0).getDate();v.setDate(Math.min(wanted,last));d=day(v);}
     return d;
   }
   function expandRepeats(s,t,until){
     until=t.repeatUntil;const plan=t.plans[0];if(!until||!plan||!t.repeat||t.repeat==='none'||t.deletedAt||t.archivedAt)return;
-    t.seriesId ||=t.id;let previous=t,date=plan.date;
-    while(true){date=nextRepeat(date,t.repeat);if(date>until)break;
+    t.seriesId ||=t.id;t.repeatAnchorDay ||=new Date(plan.date+'T12:00:00').getDate();let previous=t,date=plan.date;
+    while(true){date=nextRepeat(date,t.repeat,t.repeatAnchorDay);if(date>until)break;
       let next=s.tasks.find(x=>x.seriesId===t.seriesId&&x.plannedDate===date);
       if(!next){next={...clone(t),id:uid(),plannedDate:date,dueDate:date,status:'pending',done:false,completedAt:null,sessions:[],history:[],nextOccurrenceId:null,createdAt:new Date().toISOString()};next.plans=[{...clone(plan),id:uid(),date,baseline:null,outcome:null,actionVersion:0}];s.tasks.push(next);}
       previous.nextOccurrenceId=next.id;previous=next;

@@ -1,7 +1,7 @@
-const CACHE='flan-fact-dot-ticker-divider-11-oct22';
+const CACHE='flan-fact-qa-fixes-oct24';
 const ASSETS=['./','./index.html','./styles.css','./ux.css','./ux-model.js','./event-actions.js','./app.js','./dot-ticker.js','./backup.js','./manifest.webmanifest','./icons/icon.svg?v=15','./icons/favicon-32.png?v=15','./icons/apple-touch-icon.png?v=15','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('flan-pact-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('flan-pact-')||k.startsWith('flan-fact-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==self.location.origin||u.pathname.includes('/api/'))return;e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;}).catch(()=>caches.match(e.request).then(r=>r||(e.request.mode==='navigate'?caches.match('./index.html'):Response.error()))));});
 const choices=[{action:'done',title:'✓ Выполнено'},{action:'extend',title:'+15 минут'},{action:'missed',title:'✕ Не выполнено'}];
 function safeUrl(data){const url=new URL(data.url||'./',self.registration.scope);return url.origin===self.location.origin&&url.href.startsWith(self.registration.scope)?url.href:self.registration.scope;}

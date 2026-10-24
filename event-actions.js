@@ -15,11 +15,12 @@
   throw Error('Это время отсутствует из-за перевода часов. Выберите другое время.');
  }
  const signature=p=>JSON.stringify([p.id,p.date,p.start,p.end,p.timeZone||'',p.outcome||'',p.actionVersion||0]);
- function repeatDate(date,rule){let d=shift(date,rule==='weekly'?7:1);if(rule==='weekdays')while([0,6].includes(new Date(d+'T12:00:00Z').getUTCDay()))d=shift(d,1);if(rule==='monthly'){const v=new Date(date+'T12:00:00Z'),wanted=v.getUTCDate();v.setUTCDate(1);v.setUTCMonth(v.getUTCMonth()+1);v.setUTCDate(Math.min(wanted,new Date(Date.UTC(v.getUTCFullYear(),v.getUTCMonth()+1,0)).getUTCDate()));d=v.toISOString().slice(0,10);}return d;}
+ function repeatDate(date,rule,anchorDay){let d=shift(date,rule==='weekly'?7:1);if(rule==='weekdays')while([0,6].includes(new Date(d+'T12:00:00Z').getUTCDay()))d=shift(d,1);if(rule==='monthly'){const v=new Date(date+'T12:00:00Z'),wanted=anchorDay||v.getUTCDate();v.setUTCDate(1);v.setUTCMonth(v.getUTCMonth()+1);v.setUTCDate(Math.min(wanted,new Date(Date.UTC(v.getUTCFullYear(),v.getUTCMonth()+1,0)).getUTCDate()));d=v.toISOString().slice(0,10);}return d;}
  function repeatTask(state,t,now){
   if(!t.repeatUntil||!t.done||!t.repeat||t.repeat==='none'||t.nextOccurrenceId)return;
   const zone=t.plans[0]?.timeZone||state.settings?.timeZone||'UTC',today=zonedDay(now,zone);
-  let date=repeatDate(t.plans[0]?.date||t.plannedDate||today,t.repeat);while(date<today)date=repeatDate(date,t.repeat);
+  t.repeatAnchorDay ||=Number((t.plans[0]?.date||t.plannedDate||today).slice(8,10));
+  let date=repeatDate(t.plans[0]?.date||t.plannedDate||today,t.repeat,t.repeatAnchorDay);while(date<today)date=repeatDate(date,t.repeat,t.repeatAnchorDay);
   if(date>t.repeatUntil)return;const existing=state.tasks.find(x=>x.seriesId===(t.seriesId||t.id)&&x.plannedDate===date);if(existing){t.nextOccurrenceId=existing.id;return;}
   const next={...clone(t),id:uid(),status:'pending',done:false,completedAt:null,deletedAt:null,archivedAt:null,sessions:[],history:[],nextOccurrenceId:null,plannedDate:date,dueDate:date,createdAt:new Date(now).toISOString(),seriesId:t.seriesId||t.id};
   next.plans=t.plans.slice(0,1).map(p=>({...p,id:uid(),date,baseline:null,outcome:null,actionVersion:0}));t.seriesId=next.seriesId;t.nextOccurrenceId=next.id;state.tasks.push(next);
